@@ -72,8 +72,6 @@ export type Selected =
   | { kind: 'mouse'; mouseId: string }
   | null;
 
-export type ColorScheme = 'system' | 'light' | 'dark';
-
 function makeEmptyBindings(): BindingTable {
   const out = {} as BindingTable;
   for (const layer of ALL_LAYERS) out[layer] = {};
@@ -114,7 +112,6 @@ export interface EditorState {
   customLayouts: KeyboardLayout[];
   collapsedCategories: string[];
   activeMods: ActiveMods;
-  colorScheme: ColorScheme;
   onboardingDismissed: boolean;
   /**
    * Which BAR runtime "mode" the editor is currently focused on.
@@ -165,7 +162,6 @@ export interface EditorActions {
   ) => void;
   loadDefaults: () => void;
   resetAll: () => void;
-  setColorScheme: (s: ColorScheme) => void;
   undo: () => void;
   addCustomLayout: (layout: KeyboardLayout) => void;
   removeCustomLayout: (id: string) => void;
@@ -264,7 +260,6 @@ const initialState: EditorState = {
   customLayouts: [],
   collapsedCategories: [],
   activeMods: { Shift: false, Ctrl: false, Alt: false, Meta: false },
-  colorScheme: 'system',
   onboardingDismissed: false,
   viewMode: 'main',
   lastAppliedPresetId: null,
@@ -443,8 +438,6 @@ export const useEditorStore = create<EditorStore>()(
           undoStack: pushUndo(s),
         })),
 
-      setColorScheme: (scheme) => set(() => ({ colorScheme: scheme })),
-
       undo: () =>
         set((s) => {
           if (s.undoStack.length === 0) return s;
@@ -502,7 +495,6 @@ export const useEditorStore = create<EditorStore>()(
         customLayouts: s.customLayouts,
         collapsedCategories: s.collapsedCategories,
         activeMods: s.activeMods,
-        colorScheme: s.colorScheme,
         onboardingDismissed: s.onboardingDismissed,
         viewMode: s.viewMode,
         lastAppliedPresetId: s.lastAppliedPresetId,

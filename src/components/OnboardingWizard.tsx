@@ -17,9 +17,7 @@ import {
   CloudDownload,
   KeyboardIcon,
   Loader2,
-  Moon,
   Sparkles,
-  Sun,
   Upload,
 } from 'lucide-react';
 import { CustomLayoutDialog } from './CustomLayoutDialog';
@@ -51,8 +49,6 @@ export function OnboardingWizard({ skip }: OnboardingWizardProps) {
   const customCommands = useEditorStore((s) => s.customCommands);
   const loadBindings = useEditorStore((s) => s.loadBindings);
   const loadDefaults = useEditorStore((s) => s.loadDefaults);
-  const colorScheme = useEditorStore((s) => s.colorScheme);
-  const setColorScheme = useEditorStore((s) => s.setColorScheme);
 
   // Onboarding is a fresh-start flow → 'replace' mode wipes any pre-existing
   // bindings rather than merging. Routing through the shared hook ensures
@@ -109,35 +105,8 @@ export function OnboardingWizard({ skip }: OnboardingWizardProps) {
     <div className="fixed inset-0 z-40 overflow-y-auto bg-background">
       <div className="mx-auto flex min-h-full max-w-3xl flex-col gap-6 px-4 py-10">
         <header className="space-y-2">
-          <div className="flex items-start justify-between gap-3">
-            <div className="space-y-2">
-              <div className="bar-section text-xs text-primary">Welcome</div>
-              <h1 className="text-3xl font-bold leading-tight">BAR keymap editor</h1>
-            </div>
-            <div className="flex items-center gap-1 rounded-md border border-border bg-card/50 p-1">
-              {(['dark', 'light', 'system'] as const).map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setColorScheme(s)}
-                  aria-pressed={colorScheme === s}
-                  className={cn(
-                    'flex items-center gap-1 rounded px-2 py-1 text-[11px] capitalize transition-colors',
-                    colorScheme === s
-                      ? 'bg-primary text-primary-foreground'
-                      : 'hover:bg-accent',
-                  )}
-                >
-                  {s === 'dark' ? (
-                    <Moon className="h-3 w-3" />
-                  ) : s === 'light' ? (
-                    <Sun className="h-3 w-3" />
-                  ) : null}
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
+          <div className="bar-section text-xs text-primary">Welcome</div>
+          <h1 className="text-3xl font-bold leading-tight">BAR keymap editor</h1>
           <p className="text-sm text-muted-foreground">
             Three quick choices and you’ll be editing your <code>uikeys.txt</code> visually. You can come back to any of these later from the header.
           </p>
