@@ -4,15 +4,7 @@ Visual editor for [Beyond All Reason](https://www.beyondallreason.info/)'s
 `uikeys.txt` config. Open the page, see your keyboard with BAR's grid bindings
 already drawn on it, remap visually, export the file. No text editor required.
 
-> **Live demo:** _enable GitHub Pages on your fork — see [Deploying to GitHub Pages](#deploying-to-github-pages) below._
-
-![overview, dark](docs/screenshots/overview-dark.png)
-
-Switching to the Ctrl layer with Q selected — the panel shows the binding's
-full command, and the layer pills reveal what's on every other modifier
-combination:
-
-![ctrl layer with Q selected](docs/screenshots/ctrl-layer-dark.png)
+> **Live demo:** [drraider.github.io/bar_keybinder](https://drraider.github.io/bar_keybinder/)
 
 ## What it does
 
@@ -44,8 +36,7 @@ combination:
 - **Persistence** — every change saves to localStorage; first load shows BAR
   defaults so beginners are never staring at a blank keyboard.
 - **Undo** (Ctrl+Z), keyboard shortcuts (`/` to search, `Esc` to clear
-  selection, Ctrl+E to export), arrow-key navigation between adjacent keys,
-  dark/light/system colour scheme.
+  selection, Ctrl+E to export), arrow-key navigation between adjacent keys.
 
 ## The layer system, for newcomers
 

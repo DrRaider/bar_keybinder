@@ -10,22 +10,11 @@ import { OnboardingWizard } from '@/components/OnboardingWizard';
 import { GridMenuToolbar } from '@/components/GridMenu/GridMenuToolbar';
 import { ChatToolbar } from '@/components/ChatToolbar';
 import { useEditorStore } from '@/store/useEditorStore';
-import type { ColorScheme } from '@/store/useEditorStore';
 import { useEnsureEssentialsLoaded } from '@/lib/use-essentials';
 import { toLayerKey } from '@/lib/layers';
 import { cn } from '@/lib/cn';
 
-function applyColorScheme(scheme: ColorScheme) {
-  const root = document.documentElement;
-  const prefersDark =
-    typeof window !== 'undefined' &&
-    window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-  const dark = scheme === 'dark' || (scheme === 'system' && !!prefersDark);
-  root.classList.toggle('dark', dark);
-}
-
 export function App() {
-  const colorScheme = useEditorStore((s) => s.colorScheme);
   const clearSelected = useEditorStore((s) => s.clearSelected);
   const undo = useEditorStore((s) => s.undo);
   const activeMods = useEditorStore((s) => s.activeMods);
@@ -36,16 +25,6 @@ export function App() {
   // Lazily fetch BAR's reference preset on first run so the gold-star
   // "stock" marker reflects the live keymap.
   useEnsureEssentialsLoaded();
-
-  React.useEffect(() => {
-    applyColorScheme(colorScheme);
-    if (colorScheme !== 'system') return;
-    if (typeof window.matchMedia !== 'function') return;
-    const mql = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = () => applyColorScheme('system');
-    mql.addEventListener('change', handler);
-    return () => mql.removeEventListener('change', handler);
-  }, [colorScheme]);
 
   React.useEffect(() => {
     const handler = (e: KeyboardEvent) => {
