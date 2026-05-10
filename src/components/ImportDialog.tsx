@@ -21,9 +21,9 @@ import { parseUikeysTxt } from '@/lib/import';
 import { COMMANDS } from '@/data/commands';
 import { REMOTE_PRESETS, fetchPreset } from '@/data/presets';
 import { Download, Loader2 } from 'lucide-react';
-import { ALL_LAYERS, type BindingTable, type LayerKey } from '@/types';
+import { ALL_LAYERS, type BindingTable, type CoBindingTable, type LayerKey } from '@/types';
 import { layerDisplayName } from '@/lib/layers';
-import { mergeBindings } from '@/lib/merge-bindings';
+import { mergeBindings, mergeCoBindings } from '@/lib/merge-bindings';
 
 export interface ImportDialogProps {
   open: boolean;
@@ -50,12 +50,35 @@ function applyMapping(incoming: Partial<BindingTable>, mapping: LayerMapping): P
   return out;
 }
 
+function applyMappingCo(
+  incoming: Partial<CoBindingTable>,
+  mapping: LayerMapping,
+): Partial<CoBindingTable> {
+  const out: Partial<CoBindingTable> = {};
+  for (const sourceLayer of ALL_LAYERS) {
+    const target = mapping[sourceLayer];
+    if (target === '__skip') continue;
+    const sourceMap = incoming[sourceLayer];
+    if (!sourceMap) continue;
+    out[target] = { ...(out[target] ?? {}), ...sourceMap };
+  }
+  return out;
+}
+
 
 export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
   const mouseButtons = useEditorStore((s) => s.mouseButtons);
   const customCommands = useEditorStore((s) => s.customCommands);
   const bindings = useEditorStore((s) => s.bindings);
+  const coBindings = useEditorStore((s) => s.coBindings);
   const loadBindings = useEditorStore((s) => s.loadBindings);
+
+  const closeTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  React.useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    };
+  }, []);
 
   const [text, setText] = React.useState('');
   const [mode, setMode] = React.useState<'replace' | 'merge'>('replace');
@@ -101,11 +124,22 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
   const handleImport = () => {
     if (!parsed) return;
     const mapped = applyMapping(parsed.bindings, mapping);
+    const mappedCo = applyMappingCo(parsed.coBindings, mapping);
     const next = mergeBindings(bindings, mapped, mode);
-    loadBindings(next, parsed.newCustomCommands);
+    const nextCo = mergeCoBindings(coBindings, mappedCo, mode);
+    loadBindings(next, parsed.newCustomCommands, nextCo);
     setReport(
-      `Imported ${parsed.matchedLines} bindings (${parsed.newCustomCommands.length} custom). ${parsed.chordSequenceSkips} chord toggles + ${parsed.skippedLines} unknown lines skipped.`,
+      `✓ Imported ${parsed.matchedLines} bindings (${parsed.newCustomCommands.length} custom). ${parsed.chordSequenceSkips} chord toggles + ${parsed.skippedLines} unknown lines skipped.`,
     );
+    // Successful import — let the user see the confirmation, then close so
+    // they're not stuck staring at the modal wondering if it worked.
+    if (parsed.matchedLines > 0) {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = setTimeout(() => {
+        closeTimerRef.current = null;
+        onOpenChange(false);
+      }, 1200);
+    }
   };
 
   const sourceLayerCounts = React.useMemo(() => {

@@ -4,7 +4,13 @@ import { ALL_LAYERS, type KeyboardKey, type LayerKey } from '@/types';
 import { toLayerKey } from '@/lib/layers';
 import { bindingMatchesMode } from '@/lib/grid-menu-filter';
 import { Key, PITCH } from './Key';
-import { keyIdForMode, modeForKeyId, stripModePrefix } from '@/lib/binding-keys';
+import {
+  collectBindingsForKey,
+  keyIdForMode,
+  modeForKeyId,
+  stripModePrefix,
+  type KeyBindingEntry,
+} from '@/lib/binding-keys';
 
 function nearestKey(
   keys: readonly KeyboardKey[],
@@ -75,6 +81,16 @@ export function Keyboard() {
     }
     return out;
   }, [bindings, commandsById, mode]);
+
+  // Tooltip needs every (layer, view-mode) binding on the same physical key
+  // so the user can see what fires even outside the currently-shown mode.
+  const allBindingsByKey = React.useMemo(() => {
+    const out = new Map<string, readonly KeyBindingEntry[]>();
+    for (const k of layout.keys) {
+      out.set(k.id, collectBindingsForKey(k.id, bindings, coBindings, commandsById));
+    }
+    return out;
+  }, [layout.keys, bindings, coBindings, commandsById]);
 
   const width = layout.widthU * PITCH;
   const height = layout.heightU * PITCH;
@@ -162,6 +178,7 @@ export function Keyboard() {
                 selected={isSelected}
                 activeCommand={command}
                 {...(coCommands && coCommands.length > 0 ? { coCommands } : {})}
+                allBindings={allBindingsByKey.get(k.id) ?? EMPTY_ENTRIES}
                 activeLayer={activeLayer}
                 viewMode={mode}
                 boundLayers={layerBindMap.get(k.id) ?? EMPTY_LAYER_SET}
@@ -185,3 +202,4 @@ export function Keyboard() {
 }
 
 const EMPTY_LAYER_SET: ReadonlySet<LayerKey> = new Set();
+const EMPTY_ENTRIES: readonly KeyBindingEntry[] = [];

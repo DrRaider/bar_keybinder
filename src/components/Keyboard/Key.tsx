@@ -5,6 +5,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { LABEL_OVERRIDES, type KeyboardLabelLayout } from '@/data/keyboard-labels';
 import { layerDisplayName } from '@/lib/layers';
 import type { ViewMode } from '@/lib/grid-menu-filter';
+import type { KeyBindingEntry } from '@/lib/binding-keys';
+import { AllBindingsList } from '@/components/AllBindingsList';
 import { Star } from 'lucide-react';
 import { useIsEssentialUikeysToken } from '@/lib/use-essentials';
 
@@ -50,6 +52,8 @@ export interface KeyProps {
   activeCommand: Command | undefined;
   /** Extra commands bound to this (layer, key) beyond the primary; from BAR's double-binds. */
   coCommands?: readonly Command[];
+  /** Every (layer, mode) binding on this physical key — drives the tooltip's full list. */
+  allBindings: readonly KeyBindingEntry[];
   /** layers that have a binding for this key (for the dot row) */
   boundLayers: ReadonlySet<LayerKey>;
   /** Currently-displayed layer (Plain / Shift / …), used in tooltip labels. */
@@ -60,7 +64,7 @@ export interface KeyProps {
   onClick: () => void;
 }
 
-function KeyImpl({ k, selected, activeCommand, coCommands, boundLayers, activeLayer, viewMode, labelLayout, onClick }: KeyProps) {
+function KeyImpl({ k, selected, activeCommand, coCommands, allBindings, boundLayers, activeLayer, viewMode, labelLayout, onClick }: KeyProps) {
   const left = k.x * PITCH;
   const top = k.y * PITCH;
   const width = k.w * PITCH - GAP;
@@ -167,30 +171,26 @@ function KeyImpl({ k, selected, activeCommand, coCommands, boundLayers, activeLa
           bindName={k.bindName}
           isBindable={isBindable}
           activeCommand={activeCommand}
-          coCommands={coCommands ?? EMPTY_COMMANDS}
+          allBindings={allBindings}
           activeLayer={activeLayer}
           viewMode={viewMode}
-          boundLayers={boundLayers}
         />
       </TooltipContent>
     </Tooltip>
   );
 }
 
-const EMPTY_COMMANDS: readonly Command[] = [];
-
 interface KeyTooltipProps {
   displayLabel: string;
   bindName: string | null;
   isBindable: boolean;
   activeCommand: Command | undefined;
-  coCommands: readonly Command[];
+  allBindings: readonly KeyBindingEntry[];
   activeLayer: LayerKey;
   viewMode: ViewMode;
-  boundLayers: ReadonlySet<LayerKey>;
 }
 
-function KeyTooltip({ displayLabel, bindName, isBindable, activeCommand, coCommands, activeLayer, viewMode, boundLayers }: KeyTooltipProps) {
+function KeyTooltip({ displayLabel, bindName, isBindable, activeCommand, allBindings, activeLayer, viewMode }: KeyTooltipProps) {
   const isActiveEssential = useIsEssentialUikeysToken(activeCommand?.uikeysCommand);
   const contextLabel = layerModeLabel(activeLayer, viewMode);
   if (!isBindable) {
@@ -214,7 +214,7 @@ function KeyTooltip({ displayLabel, bindName, isBindable, activeCommand, coComma
         )}
       </div>
       {activeCommand ? (
-        <>
+        <div className="rounded border border-primary/30 bg-primary/5 px-1.5 py-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <span
               className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-primary"
@@ -231,48 +231,27 @@ function KeyTooltip({ displayLabel, bindName, isBindable, activeCommand, coComma
             )}
           </div>
           {activeCommand.description && (
-            <div className="text-[11px] leading-snug text-muted-foreground">
+            <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
               {activeCommand.description}
             </div>
           )}
-          <code className="block break-all rounded border border-border/60 bg-background/40 px-1.5 py-1 text-[10.5px] leading-snug">
-            {activeCommand.uikeysCommand}
-          </code>
-        </>
+        </div>
       ) : (
         <div className="text-[11px] text-muted-foreground">
-          No binding on this layer. Pick a command from the palette →
+          No binding on this layer + view. Pick a command from the palette →
         </div>
       )}
-      {coCommands.length > 0 && (
-        <div className="rounded border border-info/40 bg-info/5 px-1.5 py-1 text-[10.5px] leading-snug text-foreground/85">
-          <div className="mb-0.5 font-semibold text-info">
-            Also fires (BAR double-bind):
-          </div>
-          <ul className="space-y-1">
-            {coCommands.map((c) => (
-              <li key={c.id} className="flex flex-wrap items-center gap-1.5">
-                <span
-                  className="rounded bg-primary/15 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-primary"
-                  title="Layer · runtime context this co-binding fires in"
-                >
-                  {contextLabel}
-                </span>
-                <span className="font-medium">{c.fullName}</span>
-                <code className="text-[10px] text-muted-foreground">
-                  {c.uikeysCommand}
-                </code>
-              </li>
-            ))}
-          </ul>
+      <div className="border-t border-border/50 pt-1">
+        <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+          All bindings on this key ({allBindings.length})
         </div>
-      )}
-      {boundLayers.size > 0 && (
-        <div className="border-t border-border/50 pt-1 text-[10.5px] text-muted-foreground">
-          Bound on {boundLayers.size} layer
-          {boundLayers.size === 1 ? '' : 's'}: {Array.from(boundLayers).map(layerDisplayName).join(', ')}
-        </div>
-      )}
+        <AllBindingsList
+          entries={allBindings}
+          activeLayer={activeLayer}
+          activeMode={viewMode}
+          compact
+        />
+      </div>
     </div>
   );
 }

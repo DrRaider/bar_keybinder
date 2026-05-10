@@ -190,7 +190,12 @@ export function parseUikeysTxt(input: ImportInput): ImportResult {
   for (const k of layout.keys) {
     if (k.bindName != null) keyByBindName.set(k.bindName, k.id);
   }
+  // Readonly mouse buttons (L/R) are intentionally omitted — `bind mouse1 …`
+  // is parsed by BAR but never overrides the Spring engine's hardcoded
+  // select/command behavior, so the editor refuses to store those bindings
+  // and the import counts them as `skippedLines` instead.
   for (const m of mouseButtons) {
+    if (m.readonly) continue;
     keyByBindName.set(m.bindName, m.id);
   }
   const knownBindNames: ReadonlySet<string> = new Set(keyByBindName.keys());

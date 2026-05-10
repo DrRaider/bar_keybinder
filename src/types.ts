@@ -84,6 +84,16 @@ export interface MouseButton {
   bindName: string;
   /** L/R/Mid are not removable */
   removable: boolean;
+  /**
+   * BAR/Spring hardcodes the engine action for L and R clicks (select / issue
+   * command). uikeys.txt `bind mouse1 …` is parsed but additive — it never
+   * overrides the engine handler — so the editor exposes these buttons as
+   * read-only with a hint instead of letting the user pretend they're
+   * bindable.
+   */
+  readonly?: boolean;
+  /** Human-readable summary of the engine-hardcoded action — shown for readonly buttons. */
+  engineHint?: string;
 }
 
 export type CommandCategory =

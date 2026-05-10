@@ -6,8 +6,9 @@ import { layerDisplayName, layerPrefix, layerShortName, toLayerKey } from '@/lib
 import { LABEL_OVERRIDES } from '@/data/keyboard-labels';
 import { Trash2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { keyIdForMode } from '@/lib/binding-keys';
+import { collectBindingsForKey, keyIdForMode } from '@/lib/binding-keys';
 import { layerModeLabel } from '@/components/Keyboard/Key';
+import { AllBindingsList } from '@/components/AllBindingsList';
 
 export function SelectedKeyInfo() {
   const selected = useEditorStore((s) => s.selected);
@@ -66,6 +67,14 @@ export function SelectedKeyInfo() {
   const currentCoCmds = currentCoIds
     .map((id) => commandsById.get(id))
     .filter((c): c is NonNullable<typeof c> => c != null);
+  const allBindings = collectBindingsForKey(keyKey, bindings, coBindings, commandsById);
+  // Bindings outside the currently-displayed (layer, view-mode) cell — those
+  // are surfaced separately because the 16-layer grid below only renders the
+  // current view-mode column, which can hide e.g. a chat-mode binding sitting
+  // on the same key.
+  const otherBindings = allBindings.filter(
+    (e) => !(e.layer === activeLayer && e.mode === viewMode),
+  );
 
   const prefix = layerPrefix(activeLayer);
   const prefixed = prefix ? `${prefix.replace(/\+$/, '')} + ${label}` : label;
@@ -144,6 +153,23 @@ export function SelectedKeyInfo() {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+      {otherBindings.length > 0 && (
+        <div className="rounded-md border border-border bg-muted/20 p-2">
+          <div className="mb-1 text-xs font-semibold">
+            Also fires on this key ({otherBindings.length})
+          </div>
+          <p className="mb-1.5 text-[11px] text-muted-foreground">
+            Bindings on other layers or view modes — including ones that only
+            run while chat is open or grid-menu is intercepting. Switch layer
+            or view mode to edit them.
+          </p>
+          <AllBindingsList
+            entries={otherBindings}
+            activeLayer={activeLayer}
+            activeMode={viewMode}
+          />
         </div>
       )}
       <div>

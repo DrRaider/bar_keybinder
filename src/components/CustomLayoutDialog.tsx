@@ -280,6 +280,7 @@ export function CustomLayoutDialog({
                       k={k}
                       selected={false}
                       activeCommand={undefined}
+                      allBindings={EMPTY_ENTRIES}
                       boundLayers={EMPTY_SET}
                       activeLayer=""
                       viewMode="main"
@@ -352,6 +353,7 @@ export function CustomLayoutDialog({
 }
 
 const EMPTY_SET: ReadonlySet<never> = new Set();
+const EMPTY_ENTRIES: readonly [] = [];
 
 // Used for the Input import to keep it tree-shaken when no preset is needed.
 export const _ImportTypeReExport = Input;

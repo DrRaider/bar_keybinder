@@ -15,22 +15,51 @@ import { COMMANDS } from '@/data/commands';
 import { DEFAULT_BINDINGS } from '@/data/defaults';
 import { BUILTIN_LAYOUTS, DEFAULT_LAYOUT_ID } from '@/layouts';
 import type { KeyboardLabelLayout } from '@/data/keyboard-labels';
-import { allModeKeyIds, keyIdForMode, normalizeBindingsForModes } from '@/lib/binding-keys';
+import {
+  allModeKeyIds,
+  keyIdForMode,
+  normalizeBindingsForModes,
+  stripModePrefix,
+} from '@/lib/binding-keys';
 
 const STORAGE_KEY = 'bar-keymap-editor-v1';
-const STORE_VERSION = 8;
+const STORE_VERSION = 9;
 const MAX_MOUSE = 10;
 const UNDO_LIMIT = 50;
 
+/**
+ * L and R are shown but read-only — Spring engine hardcodes their behavior
+ * (select / drag-select for mouse1, issue command / drag-pan for mouse2) and
+ * `bind mouse1 …` lines are additive rather than replacements, so binding to
+ * them via uikeys.txt almost always misbehaves. BAR's own stock presets
+ * never bind them. Mouse wheel is omitted entirely for the same reason —
+ * camera and scroll behavior is owned by engine + Lua widgets, not uikeys.
+ */
 const DEFAULT_MOUSE_BUTTONS: MouseButton[] = [
-  { id: 'm1', name: 'L', bindName: 'mouse1', removable: false },
-  { id: 'm2', name: 'R', bindName: 'mouse2', removable: false },
+  {
+    id: 'm1',
+    name: 'L',
+    bindName: 'mouse1',
+    removable: false,
+    readonly: true,
+    engineHint: 'Select unit · drag selection box (Spring engine — not bindable via uikeys.txt).',
+  },
+  {
+    id: 'm2',
+    name: 'R',
+    bindName: 'mouse2',
+    removable: false,
+    readonly: true,
+    engineHint: 'Issue default command · drag-pan camera (Spring engine — not bindable via uikeys.txt).',
+  },
   { id: 'm3', name: 'Mid', bindName: 'mouse3', removable: false },
   { id: 'm4', name: 'M4', bindName: 'f13', removable: true },
   { id: 'm5', name: 'M5', bindName: 'f14', removable: true },
-  { id: 'wheelup', name: 'Wheel ↑', bindName: 'mwheelup', removable: true },
-  { id: 'wheeldown', name: 'Wheel ↓', bindName: 'mwheeldown', removable: true },
 ];
+
+const READONLY_DEFAULT_IDS = new Set(
+  DEFAULT_MOUSE_BUTTONS.filter((m) => m.readonly).map((m) => m.id),
+);
 
 /**
  * Candidate `bindName` tokens for newly-added mouse buttons. Picked first
@@ -308,6 +337,14 @@ export const useEditorStore = create<EditorStore>()(
 
       bind: (target, commandId) =>
         set((s) => {
+          // L/R (and any future read-only button) are display-only; the
+          // Spring engine hardcodes their behavior and `bind mouse1 …` is
+          // additive rather than a replacement. Block the bind so we don't
+          // emit misleading lines on export.
+          if (target.kind === 'mouse') {
+            const btn = s.mouseButtons.find((m) => m.id === target.mouseId);
+            if (btn?.readonly) return s;
+          }
           const layer = activeLayerKey(s.activeMods);
           const key = keyIdForMode(s.viewMode, targetKey(target));
           const cur = s.bindings[layer]?.[key];
@@ -323,6 +360,10 @@ export const useEditorStore = create<EditorStore>()(
 
       unbind: (target) =>
         set((s) => {
+          if (target.kind === 'mouse') {
+            const btn = s.mouseButtons.find((m) => m.id === target.mouseId);
+            if (btn?.readonly) return s;
+          }
           const layer = activeLayerKey(s.activeMods);
           const key = keyIdForMode(s.viewMode, targetKey(target));
           if (!s.bindings[layer]?.[key]) return s;
@@ -564,6 +605,48 @@ export const useEditorStore = create<EditorStore>()(
           if (m.id === 'm5' && m.bindName === 'mouse5') return { ...m, bindName: 'f14' };
           return m;
         });
+        // v8 → v9: drop wheelup/wheeldown defaults (Spring owns scroll), mark
+        // L/R as readonly with engine-hint copy, and clear any stale bindings
+        // on those ids so export doesn't emit useless `bind mouse1 …` lines.
+        const removedIds = new Set<string>();
+        merged.mouseButtons = merged.mouseButtons.flatMap<MouseButton>((m) => {
+          if (m.id === 'wheelup' || m.id === 'wheeldown') {
+            removedIds.add(m.id);
+            return [];
+          }
+          const def = DEFAULT_MOUSE_BUTTONS.find((d) => d.id === m.id);
+          if (def?.readonly) {
+            const hint = def.engineHint ?? m.engineHint;
+            const next: MouseButton = {
+              ...m,
+              removable: false,
+              readonly: true,
+              ...(hint ? { engineHint: hint } : {}),
+            };
+            return [next];
+          }
+          return [m];
+        });
+        const purgeIds = new Set<string>([
+          ...removedIds,
+          ...READONLY_DEFAULT_IDS,
+        ]);
+        if (purgeIds.size > 0) {
+          for (const layer of ALL_LAYERS) {
+            const bMap = merged.bindings[layer];
+            if (bMap) {
+              for (const k of Object.keys(bMap)) {
+                if (purgeIds.has(stripModePrefix(k))) delete bMap[k];
+              }
+            }
+            const coMap = merged.coBindings[layer];
+            if (coMap) {
+              for (const k of Object.keys(coMap)) {
+                if (purgeIds.has(stripModePrefix(k))) delete coMap[k];
+              }
+            }
+          }
+        }
         return merged;
       },
     },
