@@ -107,8 +107,12 @@ export function buildUikeysTxt(input: ExportInput): string {
       const target = targets.get(baseKeyId);
       const cmd = commandsById.get(cmdId);
       if (!target || !cmd) continue;
+      // Space doubles as BAR's Meta modifier, so pressing Space alone is seen
+      // by the engine as `Meta+space`. A plain `bind space …` therefore never
+      // matches at runtime — BAR's own configs all use `Any+space`.
+      const effectivePrefix = layer === '' && target.bindName === 'space' ? 'Any+' : prefix;
       // Primary binding first — this is the one shown in the editor UI.
-      lines.push(`bind ${prefix}${target.bindName} ${cmd.uikeysCommand}`);
+      lines.push(`bind ${effectivePrefix}${target.bindName} ${cmd.uikeysCommand}`);
       // Then any co-bindings — preserves BAR's double-bind pattern (e.g.
       // sc_d → manualfire + manuallaunch) without making the player choose.
       const cos = coLayer[keyId];
@@ -117,7 +121,7 @@ export function buildUikeysTxt(input: ExportInput): string {
           if (coId === cmdId) continue;
           const coCmd = commandsById.get(coId);
           if (!coCmd) continue;
-          lines.push(`bind ${prefix}${target.bindName} ${coCmd.uikeysCommand}`);
+          lines.push(`bind ${effectivePrefix}${target.bindName} ${coCmd.uikeysCommand}`);
         }
       }
     }

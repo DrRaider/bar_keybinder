@@ -96,6 +96,25 @@ describe('buildUikeysTxt', () => {
     expect(out).toContain('bind mouse1 attack');
   });
 
+  it('emits Plain-layer space bindings with Any+ prefix', () => {
+    // Space doubles as BAR's Meta modifier; a plain `bind space …` is dead at
+    // runtime because the engine sees `Meta+space`. The fix re-adds `Any+`.
+    const bindings = emptyBindings({
+      '': { space: 'selectbox-idle' },
+    });
+    const out = buildUikeysTxt({
+      layout: getLayout('dz60-arrows'),
+      bindings,
+      coBindings: { '': { space: ['selectbox-idle', 'buildsplit'] } } as never,
+      mouseButtons: MOUSE_DEFAULT,
+      commandsById: COMMANDS_BY_ID,
+      timestamp: '2026-01-01T00:00:00.000Z',
+    });
+    expect(out).toContain('bind Any+space selectbox_idle');
+    expect(out).toContain('bind Any+space buildsplit');
+    expect(out).not.toMatch(/^bind space /m);
+  });
+
   it('skips bindings whose command is unknown', () => {
     const bindings = emptyBindings({ '': { q: 'nonexistent-id' } });
     const out = buildUikeysTxt({
