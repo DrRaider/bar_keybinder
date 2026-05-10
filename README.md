@@ -73,7 +73,6 @@ pnpm test         # vitest run
 pnpm typecheck    # tsc --noEmit
 pnpm lint         # eslint
 pnpm build        # type-check + production build into dist/
-pnpm screenshots  # playwright captures into docs/screenshots/ (optional)
 ```
 
 ## Deploying to GitHub Pages
@@ -110,7 +109,7 @@ relative `base` keeps it portable.
 - Radix primitives wrapped as shadcn-flavoured components in
   `src/components/ui/`
 - Zustand v5 with `persist` middleware for state and localStorage
-- Vitest + React Testing Library, plus Playwright for the screenshot script
+- Vitest + React Testing Library
 
 ## Project layout
 
