@@ -36,8 +36,7 @@ already drawn on it, remap visually, export the file. No text editor required.
 - **Persistence** — every change saves to localStorage; first load shows BAR
   defaults so beginners are never staring at a blank keyboard.
 - **Undo** (Ctrl+Z), keyboard shortcuts (`/` to search, `Esc` to clear
-  selection, Ctrl+E to export), arrow-key navigation between adjacent keys,
-  dark/light/system colour scheme.
+  selection, Ctrl+E to export), arrow-key navigation between adjacent keys.
 
 ## The layer system, for newcomers
 
