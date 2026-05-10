@@ -5,9 +5,7 @@ import {
   AlertTriangle,
   Download,
   Keyboard as KeyboardIcon,
-  Moon,
   RotateCcw,
-  Sun,
   Trash2,
   Undo2,
   Upload,
@@ -51,8 +49,6 @@ function IconButton({ label, onClick, disabled, className, children }: IconButto
 }
 
 export function Header() {
-  const colorScheme = useEditorStore((s) => s.colorScheme);
-  const setColorScheme = useEditorStore((s) => s.setColorScheme);
   const loadDefaults = useEditorStore((s) => s.loadDefaults);
   const resetAll = useEditorStore((s) => s.resetAll);
   const undo = useEditorStore((s) => s.undo);
@@ -77,11 +73,6 @@ export function Header() {
     window.location.reload();
   };
 
-  const cycleColorScheme = () => {
-    const next = colorScheme === 'system' ? 'light' : colorScheme === 'light' ? 'dark' : 'system';
-    setColorScheme(next);
-  };
-
   // Bind Ctrl/Cmd+E for export
   React.useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -94,15 +85,6 @@ export function Header() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, []);
-
-  const themeIcon =
-    colorScheme === 'dark' ? (
-      <Moon className="h-4 w-4" />
-    ) : colorScheme === 'light' ? (
-      <Sun className="h-4 w-4" />
-    ) : (
-      <span className="text-[9px] font-bold tracking-wide">SYS</span>
-    );
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-md">
@@ -193,9 +175,6 @@ export function Header() {
           </Tooltip>
           <span aria-hidden className="mx-1 h-5 w-px bg-border/60" />
           <HelpPopover />
-          <IconButton label={`Color scheme: ${colorScheme}`} onClick={cycleColorScheme}>
-            {themeIcon}
-          </IconButton>
         </div>
       </div>
 
