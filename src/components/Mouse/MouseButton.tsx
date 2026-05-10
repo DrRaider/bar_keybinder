@@ -47,8 +47,16 @@ export function MouseButtonItem({ button }: MouseButtonProps) {
     { kind: 'Meta', lit: hasMod(boundLayerSet, 'Meta') },
   ];
 
+  // Local edit buffer for the rename popover. Resets to `button.name` when the
+  // saved name changes externally (undo, multi-tab edit). Compare-prev-prop
+  // pattern from https://react.dev/learn/you-might-not-need-an-effect — avoids
+  // the cascading-render lint that flags setState-in-effect.
   const [name, setName] = React.useState(button.name);
-  React.useEffect(() => setName(button.name), [button.name]);
+  const [prevSavedName, setPrevSavedName] = React.useState(button.name);
+  if (button.name !== prevSavedName) {
+    setPrevSavedName(button.name);
+    setName(button.name);
+  }
 
   return (
     <div className="relative">

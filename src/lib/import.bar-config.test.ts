@@ -1,3 +1,4 @@
+/// <reference types="node" />
 /**
  * Config-vs-expected tests: load BAR's actual hotkey files and assert that
  * specific bindings end up where they're supposed to. These tests don't
