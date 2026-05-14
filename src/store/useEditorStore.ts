@@ -12,7 +12,11 @@ import type {
 } from '@/types';
 import { ALL_LAYERS } from '@/types';
 import { COMMANDS } from '@/data/commands';
-import { defaultBindingsForLayout } from '@/data/defaults';
+import {
+  DEFAULT_BINDINGS,
+  defaultBindingsForLayout,
+  isSmallLayout,
+} from '@/data/defaults';
 import { BUILTIN_LAYOUTS, DEFAULT_LAYOUT_ID } from '@/layouts';
 import type { KeyboardLabelLayout } from '@/data/keyboard-labels';
 import {
@@ -23,7 +27,7 @@ import {
 } from '@/lib/binding-keys';
 
 const STORAGE_KEY = 'bar-keymap-editor-v1';
-const STORE_VERSION = 10;
+const STORE_VERSION = 11;
 const MAX_MOUSE = 10;
 const UNDO_LIMIT = 50;
 
@@ -243,6 +247,19 @@ function ensureAllLayers(b: BindingTable): BindingTable {
     out[layer] = { ...(b[layer] ?? {}) };
   }
   return out;
+}
+
+function bindingsEqual(a: BindingTable, b: BindingTable): boolean {
+  for (const layer of ALL_LAYERS) {
+    const aLayer = a[layer] ?? {};
+    const bLayer = b[layer] ?? {};
+    const aKeys = Object.keys(aLayer);
+    if (aKeys.length !== Object.keys(bLayer).length) return false;
+    for (const k of aKeys) {
+      if (aLayer[k] !== bLayer[k]) return false;
+    }
+  }
+  return true;
 }
 
 function ensureAllCoLayers(b: Partial<CoBindingTable> | undefined): CoBindingTable {
@@ -692,6 +709,29 @@ export const useEditorStore = create<EditorStore>()(
                 if (purgeIds.has(stripModePrefix(k))) delete coMap[k];
               }
             }
+          }
+        }
+        // v10 → v11: 60% layouts used to be seeded with the full-size grid map
+        // (drawinmap on Plain+grv) which doesn't match BAR's in-game behaviour
+        // on those boards. Retroactively swap to the 60pct seed (drawinmap on
+        // Meta+q) only when (a) the user is on a 60% layout, (b) they haven't
+        // applied any preset, and (c) their stored bindings still exactly match
+        // the old full-size seed — i.e. they never customised. Any divergence
+        // leaves the snapshot untouched.
+        if (
+          version < 11 &&
+          merged.lastAppliedPresetId === null &&
+          isSmallLayout(merged.layoutId)
+        ) {
+          const oldSeed = normalizeBindingsForModes(
+            ensureAllLayers(DEFAULT_BINDINGS),
+            buildCommandsById(merged.customCommands),
+          );
+          if (bindingsEqual(merged.bindings, oldSeed)) {
+            merged.bindings = normalizeBindingsForModes(
+              ensureAllLayers(defaultBindingsForLayout(merged.layoutId)),
+              buildCommandsById(merged.customCommands),
+            );
           }
         }
         return merged;
