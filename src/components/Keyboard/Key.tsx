@@ -7,6 +7,7 @@ import { layerDisplayName } from '@/lib/layers';
 import type { ViewMode } from '@/lib/grid-menu-filter';
 import type { KeyBindingEntry } from '@/lib/binding-keys';
 import { AllBindingsList } from '@/components/AllBindingsList';
+import { EngineContextPanel } from '@/components/EngineContextPanel';
 import { Star } from 'lucide-react';
 import { useIsEssentialUikeysToken } from '@/lib/use-essentials';
 
@@ -168,6 +169,7 @@ function KeyImpl({ k, selected, activeCommand, coCommands, allBindings, boundLay
       <TooltipContent className="max-w-xs">
         <KeyTooltip
           displayLabel={displayLabel}
+          keyId={k.id}
           bindName={k.bindName}
           isBindable={isBindable}
           activeCommand={activeCommand}
@@ -182,6 +184,7 @@ function KeyImpl({ k, selected, activeCommand, coCommands, allBindings, boundLay
 
 interface KeyTooltipProps {
   displayLabel: string;
+  keyId: string;
   bindName: string | null;
   isBindable: boolean;
   activeCommand: Command | undefined;
@@ -190,7 +193,7 @@ interface KeyTooltipProps {
   viewMode: ViewMode;
 }
 
-function KeyTooltip({ displayLabel, bindName, isBindable, activeCommand, allBindings, activeLayer, viewMode }: KeyTooltipProps) {
+function KeyTooltip({ displayLabel, keyId, bindName, isBindable, activeCommand, allBindings, activeLayer, viewMode }: KeyTooltipProps) {
   const isActiveEssential = useIsEssentialUikeysToken(activeCommand?.uikeysCommand);
   const contextLabel = layerModeLabel(activeLayer, viewMode);
   if (!isBindable) {
@@ -252,6 +255,9 @@ function KeyTooltip({ displayLabel, bindName, isBindable, activeCommand, allBind
           compact
         />
       </div>
+      {bindName && (
+        <EngineContextPanel bindName={bindName} targetId={keyId} isMouse={false} />
+      )}
     </div>
   );
 }

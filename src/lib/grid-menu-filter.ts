@@ -1,6 +1,8 @@
-import type { Command } from '@/types';
+import type { Command, ViewMode } from '@/types';
 
-export type ViewMode = 'main' | 'gridmenu' | 'chat' | 'spectate';
+// Re-exported for backwards compatibility — `ViewMode` lives in types.ts now
+// as the single source of truth (store + chord-binding records both use it).
+export type { ViewMode };
 
 /**
  * BAR has several runtime contexts that overlay the same physical keys with

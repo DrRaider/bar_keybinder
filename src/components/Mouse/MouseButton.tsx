@@ -10,6 +10,7 @@ import { X, Pencil } from 'lucide-react';
 import { ALL_LAYERS, type LayerKey, type MouseButton as MouseButtonType } from '@/types';
 import { collectBindingsForKey, keyIdForMode } from '@/lib/binding-keys';
 import { AllBindingsList } from '@/components/AllBindingsList';
+import { EngineContextPanel } from '@/components/EngineContextPanel';
 
 function hasMod(layers: ReadonlySet<LayerKey>, mod: 'Shift' | 'Ctrl' | 'Alt' | 'Meta'): boolean {
   for (const l of layers) {
@@ -151,6 +152,11 @@ export function MouseButtonItem({ button }: MouseButtonProps) {
                 />
               </div>
             )}
+            <EngineContextPanel
+              bindName={button.bindName}
+              targetId={button.id}
+              isMouse
+            />
           </div>
         </TooltipContent>
       </Tooltip>

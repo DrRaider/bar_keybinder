@@ -9,6 +9,7 @@ import { cn } from '@/lib/cn';
 import { collectBindingsForKey, keyIdForMode } from '@/lib/binding-keys';
 import { layerModeLabel } from '@/components/Keyboard/Key';
 import { AllBindingsList } from '@/components/AllBindingsList';
+import { EngineContextPanel } from '@/components/EngineContextPanel';
 
 export function SelectedKeyInfo() {
   const selected = useEditorStore((s) => s.selected);
@@ -172,6 +173,11 @@ export function SelectedKeyInfo() {
           />
         </div>
       )}
+      <EngineContextPanel
+        bindName={bindName}
+        targetId={keyKey}
+        isMouse={selected.kind === 'mouse'}
+      />
       <div>
         <div className="mb-1 text-xs text-muted-foreground">
           All {ALL_LAYERS.length} layers

@@ -4,6 +4,7 @@ import { persist } from 'zustand/middleware';
 import type {
   ActiveMods,
   BindingTable,
+  ChordBinding,
   CoBindingTable,
   Command,
   KeyboardLayout,
@@ -27,7 +28,7 @@ import {
 } from '@/lib/binding-keys';
 
 const STORAGE_KEY = 'bar-keymap-editor-v1';
-const STORE_VERSION = 11;
+const STORE_VERSION = 12;
 const MAX_MOUSE = 10;
 const UNDO_LIMIT = 50;
 
@@ -154,6 +155,13 @@ export interface EditorState {
    * the user explicitly rebinds or unbinds it.
    */
   coBindings: CoBindingTable;
+  /**
+   * Chord-sequence binds (`bind sc_b,sc_b onoff 0`) preserved through import
+   * → export round-trips. Read-only in the UI — the editor displays them on
+   * the chord's first key but doesn't model chord editing. Authoring chords
+   * is still done by editing uikeys.txt directly.
+   */
+  chordBindings: ChordBinding[];
   mouseButtons: MouseButton[];
   customCommands: Command[];
   /** User-defined keyboard layouts persisted alongside built-ins. */
@@ -207,6 +215,7 @@ export interface EditorActions {
     b: BindingTable,
     customCommands?: readonly Command[],
     coBindings?: CoBindingTable | undefined,
+    chordBindings?: readonly ChordBinding[] | undefined,
   ) => void;
   loadDefaults: () => void;
   resetAll: () => void;
@@ -319,6 +328,7 @@ const initialState: EditorState = {
     BASE_COMMANDS_BY_ID,
   ),
   coBindings: makeEmptyCoBindings(),
+  chordBindings: [],
   mouseButtons: DEFAULT_MOUSE_BUTTONS,
   customCommands: [],
   customLayouts: [],
@@ -481,7 +491,7 @@ export const useEditorStore = create<EditorStore>()(
           ),
         })),
 
-      loadBindings: (b, customCommands, coBindings) =>
+      loadBindings: (b, customCommands, coBindings, chordBindings) =>
         set((s) => {
           const undoStack = pushUndo(s);
           const merged = customCommands
@@ -492,6 +502,7 @@ export const useEditorStore = create<EditorStore>()(
           return {
             bindings: normalized,
             coBindings: ensureAllCoLayers(coBindings),
+            chordBindings: chordBindings ? [...chordBindings] : [],
             customCommands: merged,
             undoStack,
           };
@@ -504,6 +515,7 @@ export const useEditorStore = create<EditorStore>()(
             buildCommandsById(s.customCommands),
           ),
           coBindings: makeEmptyCoBindings(),
+          chordBindings: [],
           undoStack: pushUndo(s),
         })),
 
@@ -511,6 +523,7 @@ export const useEditorStore = create<EditorStore>()(
         set((s) => ({
           bindings: deepCloneBindings(EMPTY_BINDINGS),
           coBindings: makeEmptyCoBindings(),
+          chordBindings: [],
           undoStack: pushUndo(s),
         })),
 
@@ -566,6 +579,7 @@ export const useEditorStore = create<EditorStore>()(
         labelLayout: s.labelLayout,
         bindings: s.bindings,
         coBindings: s.coBindings,
+        chordBindings: s.chordBindings,
         mouseButtons: s.mouseButtons,
         customCommands: s.customCommands,
         customLayouts: s.customLayouts,
@@ -734,6 +748,10 @@ export const useEditorStore = create<EditorStore>()(
             );
           }
         }
+        // v11 → v12: new `chordBindings` sidecar (read-only round-trip for
+        // chord-sequence binds parsed from uikeys.txt). Initialise empty for
+        // existing snapshots — chords are only ever populated by an import.
+        merged.chordBindings = Array.isArray(s.chordBindings) ? [...s.chordBindings] : [];
         return merged;
       },
     },

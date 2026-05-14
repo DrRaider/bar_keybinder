@@ -70,7 +70,7 @@ describe('BAR config-vs-expected: grid_keys.txt (Q core actions)', () => {
     });
   }
 
-  it('grid_keys.txt: chord-toggle lines are reported as chord skips, not unknown skips', () => {
+  it('grid_keys.txt: chord-toggle lines are captured in the chord sidecar', () => {
     const r = parseUikeysTxt({
       text,
       layout: getLayout('ansi-tkl'),
@@ -78,7 +78,10 @@ describe('BAR config-vs-expected: grid_keys.txt (Q core actions)', () => {
       commands: COMMANDS,
     });
     // grid_keys.txt has many `sc_b,sc_b` style toggles for trajectory, firestate, etc.
-    expect(r.chordSequenceSkips).toBeGreaterThanOrEqual(14);
+    expect(r.chordBindings.length).toBeGreaterThanOrEqual(14);
+    // No chord should be skipped — every chain in BAR's config anchors on a
+    // bindable first link.
+    expect(r.chordSequenceSkips).toBe(0);
   });
 });
 

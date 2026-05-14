@@ -127,9 +127,9 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
     const mappedCo = applyMappingCo(parsed.coBindings, mapping);
     const next = mergeBindings(bindings, mapped, mode);
     const nextCo = mergeCoBindings(coBindings, mappedCo, mode);
-    loadBindings(next, parsed.newCustomCommands, nextCo);
+    loadBindings(next, parsed.newCustomCommands, nextCo, parsed.chordBindings);
     setReport(
-      `✓ Imported ${parsed.matchedLines} bindings (${parsed.newCustomCommands.length} custom). ${parsed.chordSequenceSkips} chord toggles + ${parsed.skippedLines} unknown lines skipped.`,
+      `✓ Imported ${parsed.matchedLines} bindings (${parsed.newCustomCommands.length} custom, ${parsed.chordBindings.length} chord chains). ${parsed.chordSequenceSkips} unparseable chord toggles + ${parsed.skippedLines} unknown lines skipped.`,
     );
     // Successful import — let the user see the confirmation, then close so
     // they're not stuck staring at the modal wondering if it worked.

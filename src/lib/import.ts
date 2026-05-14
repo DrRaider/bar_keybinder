@@ -1,5 +1,6 @@
 import type {
   BindingTable,
+  ChordBinding,
   CoBindingTable,
   Command,
   KeyboardLayout,
@@ -17,11 +18,21 @@ export interface ImportResult {
    * this map holds the additional commands so export can round-trip them.
    */
   coBindings: Partial<CoBindingTable>;
+  /**
+   * Chord-sequence bindings (`bind sc_b,sc_b onoff 0`). The editor doesn't
+   * model chord-sequence editing yet, but we round-trip them: surface on the
+   * starting key, emit verbatim back into uikeys.txt on export.
+   */
+  chordBindings: ChordBinding[];
   /** Newly-discovered custom commands (uikeys strings not in the catalog). */
   newCustomCommands: Command[];
   /** Lines we couldn't make sense of at all (unknown modifiers, bad keys, etc.). */
   skippedLines: number;
-  /** Multi-key chord sequences (`sc_b,sc_b ...`) — unsupported by this editor. */
+  /**
+   * Chord-sequence binds we couldn't anchor to a known key (the first link
+   * referenced an unknown bindName). Distinct from `chordBindings.length`,
+   * which counts successful chord parses.
+   */
   chordSequenceSkips: number;
   matchedLines: number;
 }
@@ -207,6 +218,7 @@ export function parseUikeysTxt(input: ImportInput): ImportResult {
 
   const bindings: Partial<BindingTable> = {};
   const coBindings: Partial<CoBindingTable> = {};
+  const chordBindings: ChordBinding[] = [];
   const newCustom = new Map<string, Command>();
   let matched = 0;
   let skipped = 0;
@@ -278,9 +290,50 @@ export function parseUikeysTxt(input: ImportInput): ImportResult {
       continue;
     }
 
-    // Skip key sequences (`sc_b,sc_b`) — we don't model chord-sequence binds.
+    // Chord sequences (`sc_b,sc_b`, `Meta+sc_q,Meta+sc_q`) — anchor on the
+    // first link so the chord shows up on the right key in the info panel,
+    // but store the raw chain verbatim so export round-trips byte-for-byte.
     if (keyToken.includes(',')) {
-      chordSkipped++;
+      const firstLink = (keyToken.split(',')[0] ?? '').trim();
+      const linkParts = firstLink.split('+');
+      const linkMods = linkParts
+        .slice(0, -1)
+        .filter((p) => !IGNORED_PREFIX_TOKENS.has(normaliseMod(p)));
+      const linkBindName = aliasBindName(linkParts[linkParts.length - 1] ?? '', knownBindNames);
+      const linkLayer = parseLayerKey(linkMods.length ? linkMods.join('+') + '+' : '');
+      const linkKeyId = keyByBindName.get(linkBindName);
+      if (linkLayer == null || linkKeyId == null) {
+        chordSkipped++;
+        continue;
+      }
+      let cmd = cmdByUikeys.get(cmdString);
+      if (!cmd) {
+        const id = customIdFor(cmdString);
+        const existing = newCustom.get(id);
+        if (existing) {
+          cmd = existing;
+        } else {
+          cmd = {
+            id,
+            category: 'Custom',
+            fullName: cmdString,
+            shortLabel: shortLabelFor(cmdString),
+            uikeysCommand: cmdString,
+            isEssential: false,
+          };
+          newCustom.set(id, cmd);
+        }
+      }
+      const mode = commandMode(cmd);
+      chordBindings.push({
+        id: `chord-${customIdFor(`${keyToken}|${cmdString}`)}`,
+        keyChain: keyToken,
+        baseKeyId: linkKeyId,
+        baseLayer: linkLayer,
+        mode,
+        cmdId: cmd.id,
+      });
+      matched++;
       continue;
     }
 
@@ -372,6 +425,7 @@ export function parseUikeysTxt(input: ImportInput): ImportResult {
   return {
     bindings,
     coBindings,
+    chordBindings,
     newCustomCommands: Array.from(newCustom.values()),
     skippedLines: skipped,
     chordSequenceSkips: chordSkipped,

@@ -73,7 +73,7 @@ describe('parseUikeysTxt — real BAR files', () => {
     expect(result.bindings.Alt?.t).toBeDefined();
   });
 
-  it('reports chord-sequence skips separately from unknown skips', () => {
+  it('captures chord-sequence binds into chordBindings instead of dropping them', () => {
     const text = FIX('bar_grid_keys.txt');
     const result = parseUikeysTxt({
       text,
@@ -81,10 +81,14 @@ describe('parseUikeysTxt — real BAR files', () => {
       mouseButtons: MOUSE,
       commands: COMMANDS,
     });
-    // grid_keys.txt has many `sc_b,sc_b` style toggles — at least 14.
-    expect(result.chordSequenceSkips).toBeGreaterThanOrEqual(14);
+    // grid_keys.txt has many `sc_b,sc_b` style toggles — at least 14 should land
+    // in the chord sidecar (previously they were silently skipped).
+    expect(result.chordBindings.length).toBeGreaterThanOrEqual(14);
+    // chordSequenceSkips now only counts chords we couldn't anchor (unknown
+    // first-link key) — should be zero for a well-formed BAR config.
+    expect(result.chordSequenceSkips).toBe(0);
 
-    // Total accounting: every `bind ` line is matched, chord-skipped, or unknown-skipped.
+    // Total accounting: every `bind ` line is matched (regular or chord) or skipped.
     const bindLineCount = text
       .split(/\r?\n/)
       .map((l) => l.replace(/\/\/.*$/, '').trim())
@@ -95,7 +99,7 @@ describe('parseUikeysTxt — real BAR files', () => {
     ).toBeGreaterThanOrEqual(bindLineCount);
   });
 
-  it('multi-key sequences (sc_b,sc_b) are counted as chord skips, not unknown skips', () => {
+  it('multi-key sequences (sc_b,sc_b) land in chordBindings and round-trip', () => {
     const text = `bind sc_b,sc_b onoff 0\nbind sc_b onoff 1\n`;
     const r = parseUikeysTxt({
       text,
@@ -103,9 +107,15 @@ describe('parseUikeysTxt — real BAR files', () => {
       mouseButtons: MOUSE,
       commands: COMMANDS,
     });
-    expect(r.matchedLines).toBe(1);
-    expect(r.chordSequenceSkips).toBe(1);
+    // Both lines are matched — one as a plain bind, one as a chord.
+    expect(r.matchedLines).toBe(2);
+    expect(r.chordSequenceSkips).toBe(0);
     expect(r.skippedLines).toBe(0);
     expect(r.bindings['']?.b).toBe('on');
+    // Chord sidecar anchors on the first link's keyId.
+    expect(r.chordBindings).toHaveLength(1);
+    expect(r.chordBindings[0]?.keyChain).toBe('sc_b,sc_b');
+    expect(r.chordBindings[0]?.baseKeyId).toBe('b');
+    expect(r.chordBindings[0]?.baseLayer).toBe('');
   });
 });

@@ -149,6 +149,32 @@ export type BindingTable = Record<LayerKey, Record<string, string>>;
  */
 export type CoBindingTable = Record<LayerKey, Record<string, readonly string[]>>;
 
+export type ViewMode = 'main' | 'gridmenu' | 'chat' | 'spectate';
+
+/**
+ * BAR chord-sequence bindings (`bind sc_b,sc_b onoff 0`). The engine fires
+ * the action when the player presses each link of the chain in order,
+ * within a short timeout. The editor's primary `BindingTable` only models
+ * single-key binds — chord chains are stored here as a flat read-only list
+ * so we can round-trip them through import/export and surface them on the
+ * starting key in the info panel. No UI for editing chords; users still
+ * author them by editing uikeys.txt directly.
+ */
+export interface ChordBinding {
+  /** Stable id used by React keys + future delete affordances. */
+  id: string;
+  /** Raw uikeys.txt chain string, verbatim (e.g. "Meta+sc_q,Meta+sc_q"). */
+  keyChain: string;
+  /** keyId of the FIRST link — surfaces this chord on that key. */
+  baseKeyId: string;
+  /** Layer derived from modifiers on the FIRST link. */
+  baseLayer: LayerKey;
+  /** View-mode that filters this chord in the UI (matches `viewMode`). */
+  mode: ViewMode;
+  /** Command id (built-in or custom-from-import). */
+  cmdId: string;
+}
+
 export function assertNever(x: never): never {
   throw new Error(`Unexpected value: ${String(x)}`);
 }

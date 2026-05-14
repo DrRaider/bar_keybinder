@@ -58,6 +58,30 @@ describe('export → parse round-trip', () => {
     }
   });
 
+  it('preserves chord-sequence binds through the round-trip', () => {
+    const text = `bind sc_b,sc_b onoff 0\nbind Meta+sc_q,Meta+sc_q drawlabel\n`;
+    const parsed = parseUikeysTxt({
+      text,
+      layout: LAYOUT,
+      mouseButtons: MOUSE,
+      commands: COMMANDS,
+    });
+    expect(parsed.chordBindings).toHaveLength(2);
+    const out = buildUikeysTxt({
+      layout: LAYOUT,
+      bindings: ensureAllLayers({}),
+      chordBindings: parsed.chordBindings,
+      mouseButtons: MOUSE,
+      commandsById: new Map([
+        ...COMMANDS_BY_ID,
+        ...parsed.newCustomCommands.map((c) => [c.id, c] as const),
+      ]),
+      timestamp: '2026-01-01T00:00:00.000Z',
+    });
+    expect(out).toContain('bind sc_b,sc_b onoff 0');
+    expect(out).toContain('bind Meta+sc_q,Meta+sc_q drawlabel');
+  });
+
   it('preserves a custom command (the parser creates a Custom of the same uikeys body)', () => {
     const customCmd: Command = {
       id: 'custom-mything',

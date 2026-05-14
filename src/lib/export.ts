@@ -1,5 +1,6 @@
 import type {
   BindingTable,
+  ChordBinding,
   CoBindingTable,
   Command,
   KeyboardLayout,
@@ -18,6 +19,11 @@ export interface ExportInput {
    * `manualfire` + `manuallaunch` on `sc_d`) round-trip faithfully.
    */
   coBindings?: CoBindingTable;
+  /**
+   * Chord-sequence bindings (`bind sc_b,sc_b onoff 0`). Emitted at the end of
+   * the file in a dedicated section so chained binds round-trip faithfully.
+   */
+  chordBindings?: readonly ChordBinding[];
   mouseButtons: readonly MouseButton[];
   /** All commands available — built-in + custom — keyed by id. */
   commandsById: ReadonlyMap<string, Command>;
@@ -71,7 +77,7 @@ function collectTargets(
 }
 
 export function buildUikeysTxt(input: ExportInput): string {
-  const { layout, bindings, coBindings, mouseButtons, commandsById, timestamp, sourcePresetName } = input;
+  const { layout, bindings, coBindings, chordBindings, mouseButtons, commandsById, timestamp, sourcePresetName } = input;
   const targets = collectTargets(layout, mouseButtons);
 
   const ts = timestamp ?? new Date().toISOString();
@@ -126,6 +132,19 @@ export function buildUikeysTxt(input: ExportInput): string {
       }
     }
     lines.push('');
+  }
+
+  if (chordBindings && chordBindings.length > 0) {
+    const emit = chordBindings.filter((c) => commandsById.has(c.cmdId));
+    if (emit.length > 0) {
+      lines.push('// Chord sequences');
+      for (const chord of emit) {
+        const cmd = commandsById.get(chord.cmdId);
+        if (!cmd) continue;
+        lines.push(`bind ${chord.keyChain} ${cmd.uikeysCommand}`);
+      }
+      lines.push('');
+    }
   }
 
   return lines.join('\n').trimEnd() + '\n';

@@ -20,6 +20,7 @@ export interface ExportPanelProps {
 export function ExportPanel({ open, onOpenChange }: ExportPanelProps) {
   const bindings = useEditorStore((s) => s.bindings);
   const coBindings = useEditorStore((s) => s.coBindings);
+  const chordBindings = useEditorStore((s) => s.chordBindings);
   const mouseButtons = useEditorStore((s) => s.mouseButtons);
   const lastAppliedPresetId = useEditorStore((s) => s.lastAppliedPresetId);
   const commandsById = useAllCommandsById();
@@ -36,11 +37,12 @@ export function ExportPanel({ open, onOpenChange }: ExportPanelProps) {
         layout,
         bindings,
         coBindings,
+        chordBindings,
         mouseButtons,
         commandsById,
         sourcePresetName,
       }),
-    [layout, bindings, coBindings, mouseButtons, commandsById, sourcePresetName],
+    [layout, bindings, coBindings, chordBindings, mouseButtons, commandsById, sourcePresetName],
   );
 
   const onCopy = async () => {
