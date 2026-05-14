@@ -290,7 +290,32 @@ export function OnboardingWizard({ skip }: OnboardingWizardProps) {
               <Button variant="ghost" size="sm" onClick={() => setStep('layout')}>
                 ← Back
               </Button>
-              <Button onClick={() => setStep('go')} disabled={busy}>
+              <Button
+                onClick={async () => {
+                  // If the user already applied a preset / loaded a file in this
+                  // step, just advance. Otherwise auto-apply the suggested preset
+                  // so "Continue" never leaves them on a stale keymap.
+                  const presetApplied =
+                    useEditorStore.getState().lastAppliedPresetId !== null ||
+                    localReport !== null;
+                  if (presetApplied) {
+                    setStep('go');
+                    return;
+                  }
+                  if (suggested) {
+                    const ok = await applyPreset(suggested.id);
+                    if (ok) setStep('go');
+                    return;
+                  }
+                  // No suggestion available (custom layout) — fall back to the
+                  // bundled defaults so they're not staring at an empty board.
+                  loadDefaults();
+                  setLocalReport('Loaded bundled defaults.');
+                  setStep('go');
+                }}
+                disabled={busy}
+              >
+                {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : null}
                 Continue
               </Button>
             </div>
