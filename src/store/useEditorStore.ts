@@ -12,7 +12,7 @@ import type {
 } from '@/types';
 import { ALL_LAYERS } from '@/types';
 import { COMMANDS } from '@/data/commands';
-import { DEFAULT_BINDINGS } from '@/data/defaults';
+import { defaultBindingsForLayout } from '@/data/defaults';
 import { BUILTIN_LAYOUTS, DEFAULT_LAYOUT_ID } from '@/layouts';
 import type { KeyboardLabelLayout } from '@/data/keyboard-labels';
 import {
@@ -282,7 +282,10 @@ const initialState: EditorState = {
   version: STORE_VERSION,
   layoutId: DEFAULT_LAYOUT_ID,
   labelLayout: 'qwerty',
-  bindings: normalizeBindingsForModes(ensureAllLayers(DEFAULT_BINDINGS), BASE_COMMANDS_BY_ID),
+  bindings: normalizeBindingsForModes(
+    ensureAllLayers(defaultBindingsForLayout(DEFAULT_LAYOUT_ID)),
+    BASE_COMMANDS_BY_ID,
+  ),
   coBindings: makeEmptyCoBindings(),
   mouseButtons: DEFAULT_MOUSE_BUTTONS,
   customCommands: [],
@@ -465,7 +468,7 @@ export const useEditorStore = create<EditorStore>()(
       loadDefaults: () =>
         set((s) => ({
           bindings: normalizeBindingsForModes(
-            ensureAllLayers(DEFAULT_BINDINGS),
+            ensureAllLayers(defaultBindingsForLayout(s.layoutId)),
             buildCommandsById(s.customCommands),
           ),
           coBindings: makeEmptyCoBindings(),

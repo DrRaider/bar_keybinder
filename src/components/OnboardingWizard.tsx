@@ -50,6 +50,17 @@ export function OnboardingWizard({ skip }: OnboardingWizardProps) {
   const loadBindings = useEditorStore((s) => s.loadBindings);
   const loadDefaults = useEditorStore((s) => s.loadDefaults);
 
+  // During onboarding, switching layouts before applying a preset should
+  // re-seed the bundled defaults so 60% boards get the `grid_keys_60pct`
+  // shape (drawinmap on Meta+q) and TKL/full boards get the `grid_keys`
+  // shape (drawinmap on Plain+grv). Once the user has applied a preset
+  // or loaded a uikeys.txt file we leave their bindings alone.
+  const pickLayout = (id: string) => {
+    const presetApplied = useEditorStore.getState().lastAppliedPresetId !== null;
+    setLayout(id);
+    if (!presetApplied) loadDefaults();
+  };
+
   // Onboarding is a fresh-start flow → 'replace' mode wipes any pre-existing
   // bindings rather than merging. Routing through the shared hook ensures
   // `lastAppliedPresetId` is set so the header dropdown reflects the choice.
@@ -138,7 +149,7 @@ export function OnboardingWizard({ skip }: OnboardingWizardProps) {
                   <button
                     key={l.id}
                     type="button"
-                    onClick={() => setLayout(l.id)}
+                    onClick={() => pickLayout(l.id)}
                     aria-pressed={selected}
                     className={cn(
                       'rounded-md border bg-card p-3 text-left text-sm transition-colors',
@@ -156,7 +167,7 @@ export function OnboardingWizard({ skip }: OnboardingWizardProps) {
                 <button
                   key={l.id}
                   type="button"
-                  onClick={() => setLayout(l.id)}
+                  onClick={() => pickLayout(l.id)}
                   className={cn(
                     'rounded-md border bg-card p-3 text-left text-sm transition-colors',
                     l.id === layoutId
