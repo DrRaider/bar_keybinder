@@ -1,10 +1,12 @@
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   AlertTriangle,
   Download,
   Keyboard as KeyboardIcon,
+  Menu,
   RotateCcw,
   Trash2,
   Undo2,
@@ -60,6 +62,7 @@ export function Header() {
   const [confirmReset, setConfirmReset] = React.useState(false);
   const [confirmHardReset, setConfirmHardReset] = React.useState(false);
   const [customLayoutOpen, setCustomLayoutOpen] = React.useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   const hardReset = () => {
     // Drop only the editor's persisted state, then force a full reload so the
@@ -86,6 +89,100 @@ export function Header() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
+  // Close the mobile menu whenever an action that opens a dialog is taken,
+  // otherwise it lingers behind the modal and reappears when the dialog closes.
+  const openExport = () => {
+    setMobileMenuOpen(false);
+    setExportOpen(true);
+  };
+  const openImport = () => {
+    setMobileMenuOpen(false);
+    setImportOpen(true);
+  };
+  const openConfirmDefaults = () => {
+    setMobileMenuOpen(false);
+    setConfirmDefaults(true);
+  };
+  const openConfirmReset = () => {
+    setMobileMenuOpen(false);
+    setConfirmReset(true);
+  };
+  const openConfirmHardReset = () => {
+    setMobileMenuOpen(false);
+    setConfirmHardReset(true);
+  };
+  const openCustomLayout = () => {
+    setMobileMenuOpen(false);
+    setCustomLayoutOpen(true);
+  };
+
+  const editActions = (
+    <div className="flex items-center rounded-md border border-border bg-card/40">
+      <IconButton label="Undo (Ctrl+Z)" onClick={undo} disabled={undoDepth === 0}>
+        <Undo2 className="h-4 w-4" />
+      </IconButton>
+      <span aria-hidden className="h-5 w-px bg-border/40" />
+      <IconButton
+        label="Load BAR defaults (bundled snapshot)"
+        onClick={openConfirmDefaults}
+      >
+        <RotateCcw className="h-4 w-4" />
+      </IconButton>
+      <span aria-hidden className="h-5 w-px bg-border/40" />
+      <IconButton
+        label="Reset all bindings"
+        onClick={openConfirmReset}
+        className="hover:text-destructive"
+      >
+        <Trash2 className="h-4 w-4" />
+      </IconButton>
+      <span aria-hidden className="h-5 w-px bg-border/40" />
+      <IconButton
+        label="Hard reset — wipe local storage and reload"
+        onClick={openConfirmHardReset}
+        className="text-destructive/80 hover:bg-destructive/10 hover:text-destructive"
+      >
+        <AlertTriangle className="h-4 w-4" />
+      </IconButton>
+    </div>
+  );
+
+  const importButton = (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={openImport}
+          className="h-8 text-xs"
+        >
+          <Upload className="mr-1 h-3 w-3" />
+          Import
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>
+        Paste, fetch from GitHub, or upload a uikeys.txt file. Always merges
+        into existing bindings.
+      </TooltipContent>
+    </Tooltip>
+  );
+
+  const exportButton = (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          size="sm"
+          onClick={openExport}
+          className="h-8 text-xs font-bold"
+        >
+          <Download className="mr-1 h-3 w-3" />
+          Export
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>Generate uikeys.txt — copy or download (Ctrl+E).</TooltipContent>
+    </Tooltip>
+  );
+
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-md">
       <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2 lg:px-8">
@@ -100,80 +197,53 @@ export function Header() {
           </div>
         </div>
 
-        {/* Layout cluster — form factor + label layout, tightly grouped */}
-        <LayoutSelector onRequestCreateLayout={() => setCustomLayoutOpen(true)} />
+        {/* Desktop toolbar — flat flex children at xl+ via display:contents. */}
+        <div className="hidden xl:contents">
+          <LayoutSelector onRequestCreateLayout={openCustomLayout} />
+          <BarPresetMenu />
+          {editActions}
+        </div>
+
         <CustomLayoutDialog
           open={customLayoutOpen}
           onOpenChange={setCustomLayoutOpen}
           hideTrigger
         />
 
-        {/* BAR preset loader */}
-        <BarPresetMenu />
-
-        {/* Edit-actions toolbar — compact icon-only with hover-only tooltips */}
-        <div className="flex items-center rounded-md border border-border bg-card/40">
-          <IconButton label="Undo (Ctrl+Z)" onClick={undo} disabled={undoDepth === 0}>
-            <Undo2 className="h-4 w-4" />
-          </IconButton>
-          <span aria-hidden className="h-5 w-px bg-border/40" />
-          <IconButton
-            label="Load BAR defaults (bundled snapshot)"
-            onClick={() => setConfirmDefaults(true)}
-          >
-            <RotateCcw className="h-4 w-4" />
-          </IconButton>
-          <span aria-hidden className="h-5 w-px bg-border/40" />
-          <IconButton
-            label="Reset all bindings"
-            onClick={() => setConfirmReset(true)}
-            className="hover:text-destructive"
-          >
-            <Trash2 className="h-4 w-4" />
-          </IconButton>
-          <span aria-hidden className="h-5 w-px bg-border/40" />
-          <IconButton
-            label="Hard reset — wipe local storage and reload"
-            onClick={() => setConfirmHardReset(true)}
-            className="text-destructive/80 hover:bg-destructive/10 hover:text-destructive"
-          >
-            <AlertTriangle className="h-4 w-4" />
-          </IconButton>
-        </div>
-
-        {/* Right-edge cluster — file ops + utility, flushed right */}
+        {/* Right-edge cluster — file ops on desktop, hamburger on mobile, help always */}
         <div className="ml-auto flex items-center gap-1.5">
-          <Tooltip>
-            <TooltipTrigger asChild>
+          <div className="hidden items-center gap-1.5 xl:flex">
+            {importButton}
+            {exportButton}
+            <span aria-hidden className="mx-1 h-5 w-px bg-border/60" />
+          </div>
+
+          {/* Hamburger — collapses LayoutSelector, BAR preset, edit
+              actions, Import/Export below xl, where the inline strip wraps. */}
+          <Popover open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <PopoverTrigger asChild>
               <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setImportOpen(true)}
-                className="h-8 text-xs"
+                variant="ghost"
+                size="icon"
+                aria-label="Open menu"
+                className="h-8 w-8 xl:hidden"
               >
-                <Upload className="mr-1 h-3 w-3" />
-                Import
+                <Menu className="h-4 w-4" />
               </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              Paste, fetch from GitHub, or upload a uikeys.txt file. Always merges
-              into existing bindings.
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                size="sm"
-                onClick={() => setExportOpen(true)}
-                className="h-8 text-xs font-bold"
-              >
-                <Download className="mr-1 h-3 w-3" />
-                Export
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Generate uikeys.txt — copy or download (Ctrl+E).</TooltipContent>
-          </Tooltip>
-          <span aria-hidden className="mx-1 h-5 w-px bg-border/60" />
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-72 space-y-3 p-3">
+              <div className="flex flex-col gap-3">
+                <LayoutSelector onRequestCreateLayout={openCustomLayout} />
+                <BarPresetMenu />
+                {editActions}
+                <div className="flex items-center gap-1.5">
+                  {importButton}
+                  {exportButton}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
           <HelpPopover />
         </div>
       </div>

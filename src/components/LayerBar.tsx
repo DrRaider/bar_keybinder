@@ -1,3 +1,4 @@
+import { Star } from 'lucide-react';
 import { useEditorStore, useActiveLayout } from '@/store/useEditorStore';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { layerDisplayName, toLayerKey } from '@/lib/layers';
@@ -253,6 +254,19 @@ function Legend() {
         </TooltipTrigger>
         <TooltipContent>
           Modifier or system key — BAR can’t bind a command to it directly.
+        </TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="flex items-center gap-1.5">
+            <Star className="h-3 w-3 shrink-0 fill-info text-info" aria-hidden />
+            default preset
+          </span>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs">
+          This binding is part of BAR's reference preset (the keymap you'd get
+          from the stock install). Helpful for spotting which commands are
+          "core" vs. your own additions.
         </TooltipContent>
       </Tooltip>
       <Tooltip>
