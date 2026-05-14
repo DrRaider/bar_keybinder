@@ -12,8 +12,8 @@ const COMMANDS_BY_ID = new Map<string, Command>(
 
 const MOUSE: MouseButton[] = [
   { id: 'm1', name: 'L', bindName: 'mouse1', removable: false },
-  { id: 'm2', name: 'R', bindName: 'mouse2', removable: false },
-  { id: 'm3', name: 'Mid', bindName: 'mouse3', removable: false },
+  { id: 'm2', name: 'Mid', bindName: 'mouse2', removable: false },
+  { id: 'm3', name: 'R', bindName: 'mouse3', removable: false },
   { id: 'm4', name: 'M4', bindName: 'mouse4', removable: true },
   { id: 'm5', name: 'M5', bindName: 'mouse5', removable: true },
 ];

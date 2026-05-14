@@ -23,17 +23,24 @@ import {
 } from '@/lib/binding-keys';
 
 const STORAGE_KEY = 'bar-keymap-editor-v1';
-const STORE_VERSION = 9;
+const STORE_VERSION = 10;
 const MAX_MOUSE = 10;
 const UNDO_LIMIT = 50;
 
 /**
- * L and R are shown but read-only — Spring engine hardcodes their behavior
- * (select / drag-select for mouse1, issue command / drag-pan for mouse2) and
- * `bind mouse1 …` lines are additive rather than replacements, so binding to
- * them via uikeys.txt almost always misbehaves. BAR's own stock presets
- * never bind them. Mouse wheel is omitted entirely for the same reason —
- * camera and scroll behavior is owned by engine + Lua widgets, not uikeys.
+ * Mouse button defaults. BAR/Spring's token mapping (verified against the
+ * Recoil engine source): mouse1 = Left, mouse2 = **Middle**, mouse3 = **Right**
+ * — driven by SDL2's `SDL_BUTTON_LEFT/MIDDLE/RIGHT = 1/2/3` and registered by
+ * `KeyCodes.cpp` at `ACTION_BUTTON_MIN..NUM_BUTTONS`. Engine source:
+ *   - rts/Game/UI/KeyCodes.cpp:163  (token registration loop)
+ *   - rts/Game/UI/MouseHandler.h:15 (NUM_BUTTONS / ACTION_BUTTON_MIN)
+ *
+ * Engine-hardcoded gestures coexist with any user binding (BAR's `bind` is
+ * additive, not replacement): LMB drag-select, MMB drag-pan, RMB issue
+ * default command. `mouse1` is the only token the engine never registers, so
+ * `bind mouse1 …` silently no-ops — we keep that button `readonly` for
+ * clarity. mouse2/mouse3 *are* bindable; we expose them as editable and the
+ * tooltip explains the additive behavior.
  */
 const DEFAULT_MOUSE_BUTTONS: MouseButton[] = [
   {
@@ -42,17 +49,25 @@ const DEFAULT_MOUSE_BUTTONS: MouseButton[] = [
     bindName: 'mouse1',
     removable: false,
     readonly: true,
-    engineHint: 'Select unit · drag selection box (Spring engine — not bindable via uikeys.txt).',
+    engineHint:
+      'Left click is reserved by BAR for selection (click = select, drag = select-box, Shift+click adds, Ctrl+click removes). Bindings on mouse1 are silently ignored by the engine.',
   },
   {
     id: 'm2',
-    name: 'R',
+    name: 'Mid',
     bindName: 'mouse2',
     removable: false,
-    readonly: true,
-    engineHint: 'Issue default command · drag-pan camera (Spring engine — not bindable via uikeys.txt).',
+    engineHint:
+      'BAR drags the camera while middle is held (engine built-in, always on). Your binding fires on click; if you then drag, the camera also pans.',
   },
-  { id: 'm3', name: 'Mid', bindName: 'mouse3', removable: false },
+  {
+    id: 'm3',
+    name: 'R',
+    bindName: 'mouse3',
+    removable: false,
+    engineHint:
+      'BAR issues the default order on right-click (engine built-in, always on). Your binding fires on click in addition to that — use a modifier (Alt/Ctrl/Shift) to avoid both firing at once.',
+  },
   { id: 'm4', name: 'M4', bindName: 'f13', removable: true },
   { id: 'm5', name: 'M5', bindName: 'f14', removable: true },
 ];
@@ -629,6 +644,35 @@ export const useEditorStore = create<EditorStore>()(
             return [next];
           }
           return [m];
+        });
+        // v9 → v10: mouse labels were swapped vs. BAR's actual semantics
+        // (SDL2 + Recoil engine: mouse2 = Middle, mouse3 = Right; engine source
+        // KeyCodes.cpp registers tokens at ACTION_BUTTON_MIN..NUM_BUTTONS).
+        // Fix labels (only if user kept the v9 defaults) and drop the spurious
+        // readonly on m2 — mouse2 is bindable, the additive engine drag-pan is
+        // explained in the new engineHint instead.
+        const V9_DEFAULT_NAMES: Record<string, string> = {
+          m1: 'L',
+          m2: 'R',
+          m3: 'Mid',
+          m4: 'M4',
+          m5: 'M5',
+        };
+        merged.mouseButtons = merged.mouseButtons.map<MouseButton>((m) => {
+          const def = DEFAULT_MOUSE_BUTTONS.find((d) => d.id === m.id);
+          if (!def) return m;
+          const shouldAutoRename = m.name === V9_DEFAULT_NAMES[m.id];
+          const next: MouseButton = {
+            id: m.id,
+            name: shouldAutoRename ? def.name : m.name,
+            bindName: m.bindName,
+            removable: m.removable,
+          };
+          // Refresh hint copy to current defaults (wording changed in v10).
+          if (def.engineHint) next.engineHint = def.engineHint;
+          // Carry readonly only if the current default still says so (m2 lost it).
+          if (def.readonly) next.readonly = true;
+          return next;
         });
         const purgeIds = new Set<string>([
           ...removedIds,

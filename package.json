@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "scrape:engine": "node scripts/scrape-engine.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.6",

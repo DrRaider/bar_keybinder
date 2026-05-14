@@ -24,8 +24,8 @@ const FIX = (name: string) =>
 
 const MOUSE: MouseButton[] = [
   { id: 'm1', name: 'L', bindName: 'mouse1', removable: false },
-  { id: 'm2', name: 'R', bindName: 'mouse2', removable: false },
-  { id: 'm3', name: 'Mid', bindName: 'mouse3', removable: false },
+  { id: 'm2', name: 'Mid', bindName: 'mouse2', removable: false },
+  { id: 'm3', name: 'R', bindName: 'mouse3', removable: false },
 ];
 
 const allLayouts = ['ansi-tkl', 'ansi-full', 'dz60-arrows'] as const;

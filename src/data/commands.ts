@@ -1,4 +1,5 @@
 import type { Command } from '@/types';
+import { ACTION_BUTTON_MIN, NUM_BUTTONS } from '@/data/generated/engine';
 
 /** Catalog entries are authored without `isEssential`; we derive it below. */
 type CommandEntry = Omit<Command, 'isEssential'>;
@@ -447,7 +448,78 @@ const COMMAND_ENTRIES: readonly CommandEntry[] = [
   { id: 'buildmenu-pregame-deselect', category: 'Chat', fullName: 'Pre-game: deselect build menu', shortLabel: 'bm.x', uikeysCommand: 'buildmenu_pregame_deselect' },
   { id: 'customgameinfo-close', category: 'Chat', fullName: 'Close custom game info overlay', shortLabel: 'gi.x', uikeysCommand: 'customgameinfo_close' },
   { id: 'teamstatus-close', category: 'Chat', fullName: 'Close team status overlay', shortLabel: 'ts.x', uikeysCommand: 'teamstatus_close' },
+
+  // ── Mouse — fire a mouse button or wheel scroll from a keyboard key ────
+  // Generated from the engine source (ACTION_BUTTON_MIN..NUM_BUTTONS in
+  // rts/Game/UI/MouseHandler.h). Lets the player bind `sc_X mouseN` so
+  // pressing a key triggers the engine action for that mouse button. The
+  // range follows whatever the engine currently registers — no manual list
+  // to keep in sync. See `scripts/scrape-engine.mjs`.
+  ...mouseButtonCommands(),
+  ...mouseWheelCommands(),
 ];
+
+/** Friendly label + description for each engine mouseN action token. */
+function mouseButtonMeta(n: number): { label: string; shortLabel: string; description: string } {
+  if (n === 2) {
+    return {
+      label: 'Middle mouse',
+      shortLabel: 'mid',
+      description:
+        'Trigger BAR’s middle-mouse press from a key. While held, BAR drag-pans the camera (engine built-in). Bind this to a keyboard key to pan the camera without using the mouse.',
+    };
+  }
+  if (n === 3) {
+    return {
+      label: 'Right mouse',
+      shortLabel: 'rmb',
+      description:
+        'Trigger BAR’s right-mouse press from a key. Issues the default order on whatever is under the cursor (move / attack / repair, depending on target).',
+    };
+  }
+  return {
+    label: `Mouse button ${n}`,
+    shortLabel: `m${n}`,
+    description: `Trigger BAR’s mouse${n} press from a key. No built-in engine gesture on this button — fires exactly the same action(s) as physically clicking side button ${n}.`,
+  };
+}
+
+function mouseButtonCommands(): readonly CommandEntry[] {
+  const out: CommandEntry[] = [];
+  for (let n = ACTION_BUTTON_MIN; n <= NUM_BUTTONS; n++) {
+    const meta = mouseButtonMeta(n);
+    out.push({
+      id: `engine-mouse-${n}`,
+      category: 'Mouse',
+      fullName: `${meta.label} (as action)`,
+      shortLabel: meta.shortLabel,
+      uikeysCommand: `mouse${n}`,
+      description: meta.description,
+    });
+  }
+  return out;
+}
+
+function mouseWheelCommands(): readonly CommandEntry[] {
+  return [
+    {
+      id: 'engine-mwheelup',
+      category: 'Mouse',
+      fullName: 'Mouse wheel up (as action)',
+      shortLabel: 'whl↑',
+      uikeysCommand: 'mwheelup',
+      description: 'Trigger BAR’s mouse-wheel-up event from a key. In default camera modes this zooms the camera in.',
+    },
+    {
+      id: 'engine-mwheeldown',
+      category: 'Mouse',
+      fullName: 'Mouse wheel down (as action)',
+      shortLabel: 'whl↓',
+      uikeysCommand: 'mwheeldown',
+      description: 'Trigger BAR’s mouse-wheel-down event from a key. In default camera modes this zooms the camera out.',
+    },
+  ];
+}
 
 /**
  * Final catalogue. `isEssential` is initialised to `false` here — the live

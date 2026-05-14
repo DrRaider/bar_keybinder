@@ -105,6 +105,7 @@ export type CommandCategory =
   | 'Camera'
   | 'Build'
   | 'Chat'
+  | 'Mouse'
   | 'Custom';
 
 export const ALL_CATEGORIES = [
@@ -116,6 +117,7 @@ export const ALL_CATEGORIES = [
   'Camera',
   'Build',
   'Chat',
+  'Mouse',
   'Custom',
 ] as const satisfies readonly CommandCategory[];
 
