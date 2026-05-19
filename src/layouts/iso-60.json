@@ -50,7 +50,7 @@
     { "id": "enter", "label": "Enter", "x": 13.75, "y": 1, "w": 1.25, "h": 2, "isModifier": false, "bindName": "enter" },
 
     { "id": "lshift","label": "Shift", "x": 0,     "y": 3, "w": 1.25, "h": 1, "isModifier": true,  "bindName": null },
-    { "id": "intl1", "label": "\\",    "x": 1.25,  "y": 3, "w": 1,    "h": 1, "isModifier": false, "bindName": "sc_\\" },
+    { "id": "intl1", "label": "\\",    "x": 1.25,  "y": 3, "w": 1,    "h": 1, "isModifier": false, "bindName": "sc_nonusbackslash" },
     { "id": "z",     "label": "Z",     "x": 2.25,  "y": 3, "w": 1,    "h": 1, "isModifier": false, "bindName": "sc_z" },
     { "id": "x",     "label": "X",     "x": 3.25,  "y": 3, "w": 1,    "h": 1, "isModifier": false, "bindName": "sc_x" },
     { "id": "c",     "label": "C",     "x": 4.25,  "y": 3, "w": 1,    "h": 1, "isModifier": false, "bindName": "sc_c" },
