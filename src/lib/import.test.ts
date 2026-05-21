@@ -120,6 +120,22 @@ describe('parseUikeysTxt', () => {
     expect(result.skippedLines).toBeGreaterThanOrEqual(2);
   });
 
+  it('accepts both spellings of the ISO <>| scancode (BAR engine #2978)', () => {
+    // Deployed BAR engine emits the typo'd `sc_nonusbacklash`; engine master
+    // emits the corrected `sc_nonusbackslash`. Both must land on intl1.
+    const both = ['bind sc_nonusbacklash attack', 'bind sc_nonusbackslash fight'];
+    for (const line of both) {
+      const result = parseUikeysTxt({
+        text: line + '\n',
+        layout: getLayout('iso-60'),
+        mouseButtons: MOUSE,
+        commands: COMMANDS,
+      });
+      expect(result.matchedLines).toBe(1);
+      expect(result.bindings['']?.intl1).toBeDefined();
+    }
+  });
+
   it('parses mouse bindings', () => {
     const text = `bind Ctrl+mouse5 selectcomm focus\n`;
     const result = parseUikeysTxt({

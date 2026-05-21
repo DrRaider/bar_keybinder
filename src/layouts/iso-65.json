@@ -53,7 +53,7 @@
     { "id": "pgdn",  "label": "PgDn",  "x": 15,    "y": 2, "w": 1,    "h": 1, "isModifier": false, "bindName": "pagedown" },
 
     { "id": "lshift","label": "Shift", "x": 0,     "y": 3, "w": 1.25, "h": 1, "isModifier": true,  "bindName": null },
-    { "id": "intl1", "label": "\\",    "x": 1.25,  "y": 3, "w": 1,    "h": 1, "isModifier": false, "bindName": "sc_nonusbackslash" },
+    { "id": "intl1", "label": "\\",    "x": 1.25,  "y": 3, "w": 1,    "h": 1, "isModifier": false, "bindName": "sc_nonusbacklash" },
     { "id": "z",     "label": "Z",     "x": 2.25,  "y": 3, "w": 1,    "h": 1, "isModifier": false, "bindName": "sc_z" },
     { "id": "x",     "label": "X",     "x": 3.25,  "y": 3, "w": 1,    "h": 1, "isModifier": false, "bindName": "sc_x" },
     { "id": "c",     "label": "C",     "x": 4.25,  "y": 3, "w": 1,    "h": 1, "isModifier": false, "bindName": "sc_c" },

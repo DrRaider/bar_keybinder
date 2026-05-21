@@ -159,6 +159,11 @@ const KEY_ALIASES: Record<string, string> = {
   sc_semicolon: 'sc_;',
   sc_quote: "sc_'",
   sc_apostrophe: "sc_'",
+  // The ISO <>| key. BAR's engine had this misspelled as `sc_nonusbacklash`
+  // (missing the inner `s`) until RecoilEngine#2978 was fixed on 2026-05-20.
+  // Released BAR clients still use the misspelled token, so our layouts keep
+  // it as-is; this alias lets a uikeys.txt from a fixed engine still import.
+  sc_nonusbackslash: 'sc_nonusbacklash',
 };
 
 function aliasBindName(name: string, knownNames: ReadonlySet<string>): string {

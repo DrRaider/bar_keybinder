@@ -76,6 +76,15 @@ function collectTargets(
   return out;
 }
 
+// BAR engine #2978: the ISO <>| key was registered as `sc_nonusbacklash`
+// (missing inner `s`) until 2026-05-20. The release client still ships the
+// typo'd token, but engine master accepts only the corrected spelling. We
+// emit both so the same uikeys.txt keeps working across the engine transition.
+function bindTokensFor(bindName: string): readonly string[] {
+  if (bindName === 'sc_nonusbacklash') return ['sc_nonusbacklash', 'sc_nonusbackslash'];
+  return [bindName];
+}
+
 export function buildUikeysTxt(input: ExportInput): string {
   const { layout, bindings, coBindings, chordBindings, mouseButtons, commandsById, timestamp, sourcePresetName } = input;
   const targets = collectTargets(layout, mouseButtons);
@@ -117,8 +126,14 @@ export function buildUikeysTxt(input: ExportInput): string {
       // by the engine as `Meta+space`. A plain `bind space …` therefore never
       // matches at runtime — BAR's own configs all use `Any+space`.
       const effectivePrefix = layer === '' && target.bindName === 'space' ? 'Any+' : prefix;
+      const emitFor = (tokens: readonly string[], uikeysCommand: string) => {
+        for (const tok of tokens) {
+          lines.push(`bind ${effectivePrefix}${tok} ${uikeysCommand}`);
+        }
+      };
+      const tokens = bindTokensFor(target.bindName);
       // Primary binding first — this is the one shown in the editor UI.
-      lines.push(`bind ${effectivePrefix}${target.bindName} ${cmd.uikeysCommand}`);
+      emitFor(tokens, cmd.uikeysCommand);
       // Then any co-bindings — preserves BAR's double-bind pattern (e.g.
       // sc_d → manualfire + manuallaunch) without making the player choose.
       const cos = coLayer[keyId];
@@ -127,7 +142,7 @@ export function buildUikeysTxt(input: ExportInput): string {
           if (coId === cmdId) continue;
           const coCmd = commandsById.get(coId);
           if (!coCmd) continue;
-          lines.push(`bind ${effectivePrefix}${target.bindName} ${coCmd.uikeysCommand}`);
+          emitFor(tokens, coCmd.uikeysCommand);
         }
       }
     }

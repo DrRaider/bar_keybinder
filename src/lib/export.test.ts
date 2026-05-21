@@ -115,6 +115,22 @@ describe('buildUikeysTxt', () => {
     expect(out).not.toMatch(/^bind space /m);
   });
 
+  it('emits both spellings for the ISO <>| key so the bind works across the BAR engine #2978 fix', () => {
+    // The deployed BAR engine recognizes only `sc_nonusbacklash` (missing
+    // inner `s`); RecoilEngine master accepts only the corrected spelling.
+    // Emitting both keeps the same uikeys.txt working on either engine build.
+    const bindings = emptyBindings({ '': { intl1: 'attack' } });
+    const out = buildUikeysTxt({
+      layout: getLayout('iso-60'),
+      bindings,
+      mouseButtons: MOUSE_DEFAULT,
+      commandsById: COMMANDS_BY_ID,
+      timestamp: '2026-01-01T00:00:00.000Z',
+    });
+    expect(out).toContain('bind sc_nonusbacklash attack');
+    expect(out).toContain('bind sc_nonusbackslash attack');
+  });
+
   it('skips bindings whose command is unknown', () => {
     const bindings = emptyBindings({ '': { q: 'nonexistent-id' } });
     const out = buildUikeysTxt({
